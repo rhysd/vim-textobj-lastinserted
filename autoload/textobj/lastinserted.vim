@@ -1,42 +1,47 @@
 let s:pos_insert_enter = [0, 0, 0, 0]
 
 function! textobj#lastinserted#select_i()
-    return s:select('v')
+    return s:select('i')
 endfunction
 
 function! textobj#lastinserted#select_a()
-    return s:select('V')
+    return s:select('a')
 endfunction
 
 function! s:invalid_buf()
     return s:pos_insert_enter[0] != getpos('.')[0]
 endfunction
 
-function! s:invalid_region(first, last)
-    if first[1] > last[1]
-        return 1
-    elseif first[1] == last[1]
-        if first[2] >= last[2]
-            return 1
-        endif
-    endif
-    return 0
+function! s:char_under_cursor()
+    return matchstr(getline('.'), '\%' . col('.') . 'c.')
 endfunction
 
-function! s:select(motion)
-
+function! s:select(mode)
     if s:invalid_buf()
-        throw "Last inserted buffer is not current buffer."
+        return 0
     endif
 
-    let first = getpos("'^")
-    let last = s:pos_insert_enter
+    silent! normal! `.
 
-    if s:invalid_region(first, last)
-        throw "Previous inserted region is invalid."
+    if a:mode == 'i' && s:char_under_cursor() == ' '
+        silent! normal! ge
     endif
 
-    return [ a:motion, first, last ]
+    let lst = getpos('.')
+
+    call setpos('.', s:pos_insert_enter)
+
+    if a:mode == 'i' && s:char_under_cursor() == ' '
+        silent! normal! w
+    endif
+
+    let fst = getpos('.')
+
+    if fst == lst
+        return 0
+    endif
+
+    return [ 'v', fst, lst ]
 endfunction
 
 function! textobj#lastinserted#autocmd_insert_enter()
