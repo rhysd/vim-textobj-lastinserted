@@ -13,17 +13,21 @@ function! s:invalid_buf()
 endfunction
 
 function! s:char_under_cursor()
-    return matchstr(getline('.'), '\%' . col('.') . 'c.')
+    return getline('.')[col('.') - 1]
 endfunction
 
-function! s:select(mode)
+function! s:should_strip_whitespace(motion)
+    return a:motion == 'i' && s:char_under_cursor() =~ '\s'
+endfunction
+
+function! s:select(motion)
     if s:invalid_buf()
         return 0
     endif
 
     silent! normal! `.
 
-    if a:mode == 'i' && s:char_under_cursor() == ' '
+    if s:should_strip_whitespace(a:motion)
         silent! normal! ge
     endif
 
@@ -31,7 +35,7 @@ function! s:select(mode)
 
     call setpos('.', s:pos_insert_enter)
 
-    if a:mode == 'i' && s:char_under_cursor() == ' '
+    if s:should_strip_whitespace(a:motion)
         silent! normal! w
     endif
 
